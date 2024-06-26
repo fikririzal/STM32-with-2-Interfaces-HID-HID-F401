@@ -1,4 +1,4 @@
-#STM32 with 2 Interfaces HID+HID F401
+# STM32 with 2 Interfaces HID+HID F401
 Documentation of the progress of my project from RapidTrigger OSUpad by adding a HID with 3 Axis joystick.
 
 The Device Descriptor and Configuration Descriptor can be understood by the HOST, the Keyboard and Joystick are registered.
