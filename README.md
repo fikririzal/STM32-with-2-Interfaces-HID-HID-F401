@@ -15,8 +15,7 @@ One of myRefence USBPcap file is my gaming mouse, with 3 interfaces (Mouse, Keyb
 
 
 
-## Changed File
-Changed File related to Problem above after Code Generation
+## Changed File related to Problem above after Code Generation
 ### stm32f4xx_hal_pcd.c
 ```
   if (ep_addr == 0x82) {
@@ -26,6 +25,7 @@ Changed File related to Problem above after Code Generation
   }
 ```
 [To codeline](https://github.com/fikririzal/STM32-with-2-Interfaces-HID-HID-F401/blob/1cafba283af2a12412ec40e187a9b92fc48d6459/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.c#L1936-L1940), I think this change is because the index `ep_addr` array if `0x82` contains an empty config endpoint, therefore I switched it to index `0x81` which contains the default config endpoint
+
 ### usbd_customhid.c
 
 ```
@@ -34,11 +34,16 @@ uint8_t USBD_CUSTOM_HID_SendReport(USBD_HandleTypeDef *pdev,
 {
 ```
 [To codeline](https://github.com/fikririzal/STM32-with-2-Interfaces-HID-HID-F401/blob/1cafba283af2a12412ec40e187a9b92fc48d6459/Middlewares/ST/STM32_USB_Device_Library/Class/CustomHID/Src/usbd_customhid.c#L691-L693), I gave the function a new parameter, namely `uint8_t Ep` so that I can choose which endpoint the `uint8_t *report` packet is sent to
+## Changed File related Device and Configuration Descriptor after Code Generation
+### stm32f4xx_hal_pcd.c
+```
+
+```
+[To codeline](), 
+
 ### usbd_customhid.c
 
 ```
-uint8_t USBD_CUSTOM_HID_SendReport(USBD_HandleTypeDef *pdev,
-                                   uint8_t *report, uint16_t len, uint8_t Ep)
-{
+
 ```
-[To codeline](https://github.com/fikririzal/STM32-with-2-Interfaces-HID-HID-F401/blob/1cafba283af2a12412ec40e187a9b92fc48d6459/Middlewares/ST/STM32_USB_Device_Library/Class/CustomHID/Src/usbd_customhid.c#L691-L693), I gave the function a new parameter, namely `uint8_t Ep` so that I can choose which endpoint the `uint8_t *report` packet is sent to
+[To codeline](), 
