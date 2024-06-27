@@ -58,6 +58,8 @@ TIM_HandleTypeDef htim2;
 extern USBD_HandleTypeDef hUsbDeviceFS;
 #define bufferSize 8
 uint8_t keyboardHID[bufferSize] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+uint8_t buffer[bufferSize] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+uint32_t PB_activity = 2863311530;
 uint8_t KEY[3] = { 0x04, 0x16, 0x07 };
 uint32_t USBKEYBOARDfailCOUNTER = 0;
 uint32_t USBKEYBOARDbusyCOUNTER = 0;
@@ -241,9 +243,21 @@ int main(void) {
 	MX_USB_DEVICE_Init();
 	MX_TIM2_Init();
 	/* USER CODE BEGIN 2 */
-	ssd1306_Init();
-	ADC_HE_Init();
-	ssd1306_LOGO();
+//	ssd1306_Init();
+//	ADC_HE_Init();
+//	ssd1306_LOGO();
+	keyboardHID[2] = 0x71;
+	keyboardHID[3] = 0x72;
+	keyboardHID[4] = 0x73;
+
+	buffer[0] = 0;
+	buffer[1] = PB_activity >> 8;
+	buffer[2] = PB_activity >> 16;
+	buffer[3] = PB_activity >> 24;
+	buffer[4] = LOBYTE(65535 / 2);
+	buffer[5] = HIBYTE(65535 / 2);
+	buffer[6] = LOBYTE(65535 / 2);
+	buffer[7] = HIBYTE(65535 / 2);
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -253,12 +267,20 @@ int main(void) {
 
 		/* USER CODE BEGIN 3 */
 		uint32_t x = HAL_GetTick();
-//				ssd1306_TestAll();
-		ADC_HE_Reading();
-		ssd1306_display();
-		Encoder();
-		keyUpdate();
-		//		Blink();
+
+		/*while (USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, keyboardHID,
+		bufferSize, CUSTOM_HID_KEYBOARD_EPIN_ADDR) != USBD_OK)
+			;
+		while (USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, buffer,
+		bufferSize, CUSTOM_HID_JOYSTICK_EPIN_ADDR) != USBD_OK)
+			;*/
+
+//		ssd1306_TestAll();
+//		ADC_HE_Reading();
+//		ssd1306_display();
+//		Encoder();
+//		keyUpdate();
+//		Blink();
 
 		loopTime = HAL_GetTick() - x;
 	}
@@ -628,98 +650,104 @@ void ADC_HE_Reading(void) {
 }
 
 void keyUpdate(void) {
-	static uint32_t time = 0;
-	if (HAL_GetTick() - time > 1) {
-		time = HAL_GetTick();
+//	static uint32_t time = 0;
+//	if (HAL_GetTick() - time > 1) {
+//		time = HAL_GetTick();
 
-		if (HE_calibration) {
-			for (int8_t i = 0; i < 3; ++i) {
-				if (HE_MMvalue[i] < 4.00 - HE_trigger) {
-					if (HE_MMvalue[i]
-							> HE_lastMMvalue[i] + HE_StatusChangeOffset
+	if (HE_calibration) {
+		for (int8_t i = 0; i < 3; ++i) {
+			if (HE_MMvalue[i] < 4.00 - HE_trigger) {
+				if (HE_MMvalue[i] > HE_lastMMvalue[i] + HE_StatusChangeOffset
 //						|| HE_MMvalue[i] > 4.00
-									) {
-						HE_RTcount++;
-						HE_lastMMvalue[i] = HE_MMvalue[i];
-						HE_Status[i] = RESET;
-						keyboardHID[i + 2] = 0x00;
-					}
-
-					if (HE_MMvalue[i]
-							< HE_lastMMvalue[i] - HE_StatusChangeOffset) {
-						HE_lastMMvalue[i] = HE_MMvalue[i];
-						HE_Status[i] = SET;
-						keyboardHID[i + 2] = KEY[i];
-					}
-				} else {
-					HE_lastMMvalue[i] = HE_MMvalue[i] + HE_StatusChangeOffset;
+						) {
+					HE_RTcount++;
+					HE_lastMMvalue[i] = HE_MMvalue[i];
 					HE_Status[i] = RESET;
 					keyboardHID[i + 2] = 0x00;
 				}
 
+				if (HE_MMvalue[i] < HE_lastMMvalue[i] - HE_StatusChangeOffset) {
+					HE_lastMMvalue[i] = HE_MMvalue[i];
+					HE_Status[i] = SET;
+					keyboardHID[i + 2] = KEY[i];
+				}
+			} else {
+				HE_lastMMvalue[i] = HE_MMvalue[i] + HE_StatusChangeOffset;
+				HE_Status[i] = RESET;
+				keyboardHID[i + 2] = 0x00;
 			}
+
 		}
-
-		keyboardHID[5] = 0x00;
-		keyboardHID[6] = 0x00;
-		if (!ssd1306_Enable) {
-			if (encoderCW) {
-				encoderCW = RESET;
-				keyboardHID[5] = 0x27;
-			}
-
-			if (encoderCCW) {
-				encoderCCW = RESET;
-				keyboardHID[6] = 0x1E;
-			}
-		}
-
-		uint8_t buffer[CUSTOM_HID_JOYSTICK_EPIN_SIZE] = { 0 };
-		uint32_t PB_activity = 2863311530;
-		buffer[0] = PB_activity;
-		buffer[1] = PB_activity >> 8;
-		buffer[2] = PB_activity >> 16;
-		buffer[3] = PB_activity >> 24;
-		buffer[4] = LOBYTE(65535 / 2);
-		buffer[5] = HIBYTE(65535 / 2);
-		buffer[6] = LOBYTE(65535 / 2);
-		buffer[7] = HIBYTE(65535 / 2);
-
-		if (ISsendKEYBOARD) {
-			switch (USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, keyboardHID,
-			bufferSize, CUSTOM_HID_KEYBOARD_EPIN_ADDR)) {
-			case USBD_FAIL:
-				USBKEYBOARDfailCOUNTER++;
-				USBKEYBOARDokSTART = HAL_GetTick();
-				break;
-			case USBD_BUSY:
-				USBKEYBOARDbusyCOUNTER++;
-				USBKEYBOARDokSTART = HAL_GetTick();
-				break;
-			default:
-				USBKEYBOARDokTIME = HAL_GetTick() - USBKEYBOARDokSTART;
-				ISsendKEYBOARD = RESET;
-				break;
-			}
-		} else {
-			switch (USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, buffer,
-			CUSTOM_HID_JOYSTICK_EPIN_SIZE, CUSTOM_HID_JOYSTICK_EPIN_ADDR)) {
-			case USBD_FAIL:
-				USBJOYSTICKfailCOUNTER++;
-				USBJOYSTICKokSTART = HAL_GetTick();
-				break;
-			case USBD_BUSY:
-				USBJOYSTICKbusyCOUNTER++;
-				USBJOYSTICKokSTART = HAL_GetTick();
-				break;
-			default:
-				USBJOYSTICKokTIME = HAL_GetTick() - USBJOYSTICKokSTART;
-				ISsendKEYBOARD = SET;
-				break;
-			}
-		}
-
 	}
+
+	keyboardHID[5] = 0x00;
+	keyboardHID[6] = 0x00;
+	if (!ssd1306_Enable) {
+		if (encoderCW) {
+			encoderCW = RESET;
+			keyboardHID[5] = 0x27;
+		}
+
+		if (encoderCCW) {
+			encoderCCW = RESET;
+			keyboardHID[6] = 0x1E;
+		}
+	}
+	keyboardHID[2] = 0x71;
+	keyboardHID[3] = 0x72;
+	keyboardHID[4] = 0x73;
+
+	buffer[0] = 0;
+	buffer[1] = PB_activity >> 8;
+	buffer[2] = PB_activity >> 16;
+	buffer[3] = PB_activity >> 24;
+	buffer[4] = LOBYTE(65535 / 2);
+	buffer[5] = HIBYTE(65535 / 2);
+	buffer[6] = LOBYTE(65535 / 2);
+	buffer[7] = HIBYTE(65535 / 2);
+
+//	while (USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, keyboardHID,
+//	bufferSize, CUSTOM_HID_KEYBOARD_EPIN_ADDR) != USBD_OK)
+//		;
+//	while (USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, buffer,
+//	bufferSize, CUSTOM_HID_JOYSTICK_EPIN_ADDR) != USBD_OK)
+//		;
+
+//		if (ISsendKEYBOARD) {
+//			switch (USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, keyboardHID,
+//			bufferSize, CUSTOM_HID_KEYBOARD_EPIN_ADDR)) {
+//			case USBD_FAIL:
+//				USBKEYBOARDfailCOUNTER++;
+//				USBKEYBOARDokSTART = HAL_GetTick();
+//				break;
+//			case USBD_BUSY:
+//				USBKEYBOARDbusyCOUNTER++;
+//				USBKEYBOARDokSTART = HAL_GetTick();
+//				break;
+//			default:
+//				USBKEYBOARDokTIME = HAL_GetTick() - USBKEYBOARDokSTART;
+//				ISsendKEYBOARD = RESET;
+//				break;
+//			}
+//		} else {
+//			switch (USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, buffer,
+//			bufferSize, CUSTOM_HID_JOYSTICK_EPIN_ADDR)) {
+//			case USBD_FAIL:
+//				USBJOYSTICKfailCOUNTER++;
+//				USBJOYSTICKokSTART = HAL_GetTick();
+//				break;
+//			case USBD_BUSY:
+//				USBJOYSTICKbusyCOUNTER++;
+//				USBJOYSTICKokSTART = HAL_GetTick();
+//				break;
+//			default:
+//				USBJOYSTICKokTIME = HAL_GetTick() - USBJOYSTICKokSTART;
+//				ISsendKEYBOARD = SET;
+//				break;
+//			}
+//		}
+
+//	}
 }
 
 void Blink(void) {

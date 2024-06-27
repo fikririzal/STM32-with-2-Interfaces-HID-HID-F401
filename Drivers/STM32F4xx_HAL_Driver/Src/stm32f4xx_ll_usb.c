@@ -1005,6 +1005,10 @@ HAL_StatusTypeDef USB_WritePacket(const USB_OTG_GlobalTypeDef *USBx, uint8_t *sr
   uint32_t count32b;
   uint32_t i;
 
+  if (ch_ep_num == 2) {
+	  ch_ep_num = 1;
+  }
+
   if (dma == 0U)
   {
     count32b = ((uint32_t)len + 3U) / 4U;

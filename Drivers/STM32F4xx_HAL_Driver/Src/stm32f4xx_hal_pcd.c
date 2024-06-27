@@ -1934,11 +1934,10 @@ HAL_StatusTypeDef HAL_PCD_EP_Transmit(PCD_HandleTypeDef *hpcd, uint8_t ep_addr, 
   PCD_EPTypeDef *ep;
 
   if (ep_addr == 0x82) {
-	ep = &hpcd->IN_ep[0x81 & EP_ADDR_MSK];
-  } else {
-	ep = &hpcd->IN_ep[ep_addr & EP_ADDR_MSK];
+	  ep_addr = 0x81;
   }
-//  ep = &hpcd->IN_ep[ep_addr & EP_ADDR_MSK];
+
+  ep = &hpcd->IN_ep[ep_addr & EP_ADDR_MSK];
 //  ep = &hpcd->IN_ep[0x81 & EP_ADDR_MSK];
 
   /*setup and start the Xfer */

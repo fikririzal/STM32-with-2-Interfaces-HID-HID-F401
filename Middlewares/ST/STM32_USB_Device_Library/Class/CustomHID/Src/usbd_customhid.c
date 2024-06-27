@@ -709,7 +709,8 @@ uint8_t USBD_CUSTOM_HID_SendReport(USBD_HandleTypeDef *pdev,
     if (hhid->state == CUSTOM_HID_IDLE)
     {
       hhid->state = CUSTOM_HID_BUSY;
-      (void)USBD_LL_Transmit(pdev, Ep, report, len);
+      USBD_LL_Transmit(pdev, Ep, report, len);
+
     }
     else
     {
